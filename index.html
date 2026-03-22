@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wheel Strategy Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --green: #059669;
+      --red: #dc2626;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.1;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .badge {
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .grid-4, .grid-2, .grid-form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-form { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-body { padding: 20px; }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 18px 0;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 116px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .metric-value {
+      font-size: 30px;
+      font-weight: 800;
+      margin-top: 10px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 26px 0 18px;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: white;
+      padding: 12px 18px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 13px 18px;
+      border-radius: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    .small-stat {
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .small-stat .label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .small-stat .value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+
+    .overview-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+
+    .stats-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 320px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    th { color: var(--muted); font-weight: 700; }
+    .positive { color: var(--green); font-weight: 700; }
+    .negative { color: var(--red); font-weight: 700; }
+
+    .pill {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .delete-btn {
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 1100px) {
+      .grid-4, .grid-form, .grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .overview-layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .container { padding: 16px; }
+      .grid-4, .grid-form, .grid-2 { grid-template-columns: 1fr; }
+      h1 { font-size: 28px; }
+      .metric-value { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Wheel Strategy Dashboard</h1>
+        <div class="sub">Static manual tracker for cash-secured puts, covered calls, assignments, and total wheel performance.</div>
+      </div>
+      <div class="badge">Pure Static Version</div>
+    </div>
+
+    <div class="grid-4">
+      <div class="card"><div class="card-body metric"><div><div class="metric-label">Total P&amp;L</div><div class="metric-value" id="metricPnL">$0</div></div></div></div>
+      <div class="card"><div class="card-body metric"><div><div class="metric-label">Premium Collected</div><div class="metric-value" id="metricPremium">$0</div></div></div></div>
+      <div class="card"><div class="card-body metric"><div><div class="metric-label">Win Rate</div><div class="metric-value" id="metricWinRate">0%</div></div></div></div>
+      <div class="card"><div class="card-body metric"><div><div class="metric-label">Capital Tracked</div><div class="metric-value" id="metricCapital">$0</div></div></div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Overview Dashboard</button>
+      <button class="tab-btn" data-tab="analytics">Analytics Dashboard</button>
+      <button class="tab-btn" data-tab="trades">Trade Log</button>
+    </div>
+
+    <div id="overview" class="tab-content active">
+      <div class="overview-layout">
+        <div class="card">
+          <div class="card-body">
+            <div class="card-title">Add New Trade</div>
+            <div class="grid-form">
+              <div><label>Date</label><input id="date" type="date"></div>
+              <div><label>Ticker</label><input id="ticker" placeholder="e.g. IBIT"></div>
+              <div><label>Trade Type</label><select id="tradeType"><option>Cash-Secured Put</option><option>Covered Call</option><option>Share Sale</option></select></div>
+              <div><label>Strike</label><input id="strike" type="number" placeholder="48"></div>
+              <div><label>Premium Collected</label><input id="premium" type="number" placeholder="145"></div>
+              <div><label>Capital Used</label><input id="capitalUsed" type="number" placeholder="4800"></div>
+              <div><label>Trade Result P&amp;L</label><input id="result" type="number" placeholder="145 or -210"></div>
+              <div><label>Status</label><select id="status"><option>Open</option><option>Closed</option><option>Expired</option><option>Assigned</option></select></div>
+              <div><label>Shares Assigned</label><input id="sharesAssigned" type="number" placeholder="0 or 100" value="0"></div>
+            </div>
+            <div class="actions">
+              <button class="primary" id="addTradeBtn">Add Trade</button>
+            </div>
+            <div class="footer-note">This version is a single-file static webpage. Trades are saved in your browser using localStorage.</div>
+          </div>
+        </div>
+
+        <div class="stats-stack">
+          <div class="card"><div class="card-body small-stat"><div class="label">Open Trades</div><div class="value" id="statOpen">0</div></div></div>
+          <div class="card"><div class="card-body small-stat"><div class="label">Winning Trades</div><div class="value" id="statWins">0</div></div></div>
+          <div class="card"><div class="card-body small-stat"><div class="label">Losing Trades</div><div class="value" id="statLosses">0</div></div></div>
+          <div class="card"><div class="card-body small-stat"><div class="label">Assignments</div><div class="value" id="statAssigned">0</div></div></div>
+          <div class="card"><div class="card-body small-stat"><div class="label">Avg Return on Tracked Capital</div><div class="value" id="statAvgReturn">0%</div></div></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:18px;">
+        <div class="card"><div class="card-body"><div class="card-title">Monthly P&amp;L</div><div class="chart-wrap"><canvas id="monthlyChart"></canvas></div></div></div>
+        <div class="card"><div class="card-body"><div class="card-title">Trade Status Mix</div><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div></div>
+      </div>
+    </div>
+
+    <div id="analytics" class="tab-content">
+      <div class="grid-2">
+        <div class="card"><div class="card-body"><div class="card-title">Cumulative Equity Curve</div><div class="chart-wrap"><canvas id="equityChart"></canvas></div></div></div>
+        <div class="card"><div class="card-body"><div class="card-title">P&amp;L by Ticker</div><div class="chart-wrap"><canvas id="tickerChart"></canvas></div></div></div>
+      </div>
+      <div class="grid-4" style="margin-top:18px;">
+        <div class="card"><div class="card-body small-stat"><div class="label">Best Outcome Driver</div><div class="value" id="bestTicker">-</div></div></div>
+        <div class="card"><div class="card-body small-stat"><div class="label">Worst Outcome Driver</div><div class="value" id="worstTicker">-</div></div></div>
+        <div class="card"><div class="card-body small-stat"><div class="label">Trades Logged</div><div class="value" id="tradeCount">0</div></div></div>
+        <div class="card"><div class="card-body small-stat"><div class="label">Avg Premium / Trade</div><div class="value" id="avgPremium">$0</div></div></div>
+      </div>
+    </div>
+
+    <div id="trades" class="tab-content">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-title">Manual Trade Log</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Ticker</th>
+                  <th>Type</th>
+                  <th>Strike</th>
+                  <th>Premium</th>
+                  <th>Capital</th>
+                  <th>Result</th>
+                  <th>Status</th>
+                  <th>Assigned</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="tradeTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'wheel_strategy_trades_v1';
+
+    const starterTrades = [
+      { id: 1, date: '2026-03-01', ticker: 'IBIT', tradeType: 'Cash-Secured Put', strike: 48, premium: 145, capitalUsed: 4800, result: 145, status: 'Expired', sharesAssigned: 0 },
+      { id: 2, date: '2026-03-08', ticker: 'SOXL', tradeType: 'Covered Call', strike: 38, premium: 92, capitalUsed: 3200, result: 60, status: 'Closed', sharesAssigned: 0 },
+      { id: 3, date: '2026-03-14', ticker: 'ASTS', tradeType: 'Cash-Secured Put', strike: 30, premium: 120, capitalUsed: 3000, result: -210, status: 'Assigned', sharesAssigned: 100 },
+      { id: 4, date: '2026-03-20', ticker: 'ASTS', tradeType: 'Covered Call', strike: 34, premium: 88, capitalUsed: 3000, result: 88, status: 'Open', sharesAssigned: 0 }
+    ];
+
+    let trades = loadTrades();
+    let monthlyChart, statusChart, equityChart, tickerChart;
+
+    function loadTrades() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return starterTrades;
+      try { return JSON.parse(raw); } catch { return starterTrades; }
+    }
+
+    function saveTrades() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    }
+
+    function fmtNum(v) {
+      return Number(v || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+
+    function fmtCurrency(v) {
+      return '$' + fmtNum(v);
+    }
+
+    function calcMetrics() {
+      const totalPremium = trades.reduce((s, t) => s + Number(t.premium || 0), 0);
+      const totalPnL = trades.reduce((s, t) => s + Number(t.result || 0), 0);
+      const totalCapital = trades.reduce((s, t) => s + Number(t.capitalUsed || 0), 0);
+      const closedTrades = trades.filter(t => t.status !== 'Open');
+      const wins = closedTrades.filter(t => Number(t.result) > 0).length;
+      const losses = closedTrades.filter(t => Number(t.result) < 0).length;
+      const assigned = trades.filter(t => t.status === 'Assigned').length;
+      const openTrades = trades.filter(t => t.status === 'Open').length;
+      const winRate = closedTrades.length ? (wins / closedTrades.length) * 100 : 0;
+      const avgReturn = totalCapital > 0 ? (totalPnL / totalCapital) * 100 : 0;
+      return { totalPremium, totalPnL, totalCapital, wins, losses, assigned, openTrades, winRate, avgReturn };
+    }
+
+    function groupMonthly() {
+      const grouped = {};
+      [...trades].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(t => {
+        const month = t.date.slice(0, 7);
+        if (!grouped[month]) grouped[month] = { month, pnl: 0 };
+        grouped[month].pnl += Number(t.result || 0);
+      });
+      return Object.values(grouped);
+    }
+
+    function groupStatus() {
+      const counts = {};
+      trades.forEach(t => counts[t.status] = (counts[t.status] || 0) + 1);
+      return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    }
+
+    function groupTickerPnL() {
+      const grouped = {};
+      trades.forEach(t => grouped[t.ticker] = (grouped[t.ticker] || 0) + Number(t.result || 0));
+      return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+    }
+
+    function cumulativeSeries() {
+      let running = 0;
+      return [...trades]
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .map(t => {
+          running += Number(t.result || 0);
+          return { date: t.date, cumulative: running };
+        });
+    }
+
+    function renderMetrics() {
+      const m = calcMetrics();
+      document.getElementById('metricPnL').textContent = fmtCurrency(m.totalPnL);
+      document.getElementById('metricPremium').textContent = fmtCurrency(m.totalPremium);
+      document.getElementById('metricWinRate').textContent = fmtNum(m.winRate) + '%';
+      document.getElementById('metricCapital').textContent = fmtCurrency(m.totalCapital);
+      document.getElementById('statOpen').textContent = m.openTrades;
+      document.getElementById('statWins').textContent = m.wins;
+      document.getElementById('statLosses').textContent = m.losses;
+      document.getElementById('statAssigned').textContent = m.assigned;
+      document.getElementById('statAvgReturn').textContent = fmtNum(m.avgReturn) + '%';
+
+      const tickerData = groupTickerPnL().sort((a, b) => b.value - a.value);
+      document.getElementById('bestTicker').textContent = tickerData[0]?.name || '-';
+      document.getElementById('worstTicker').textContent = tickerData[tickerData.length - 1]?.name || '-';
+      document.getElementById('tradeCount').textContent = trades.length;
+      document.getElementById('avgPremium').textContent = fmtCurrency(trades.length ? m.totalPremium / trades.length : 0);
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tradeTableBody');
+      tbody.innerHTML = '';
+      trades.forEach(trade => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${trade.date}</td>
+          <td><strong>${trade.ticker}</strong></td>
+          <td>${trade.tradeType}</td>
+          <td>${trade.strike}</td>
+          <td>${fmtCurrency(trade.premium)}</td>
+          <td>${fmtCurrency(trade.capitalUsed)}</td>
+          <td class="${Number(trade.result) >= 0 ? 'positive' : 'negative'}">${fmtCurrency(trade.result)}</td>
+          <td><span class="pill">${trade.status}</span></td>
+          <td>${trade.sharesAssigned}</td>
+          <td><button class="delete-btn" onclick="deleteTrade(${trade.id})">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function destroyCharts() {
+      [monthlyChart, statusChart, equityChart, tickerChart].forEach(chart => { if (chart) chart.destroy(); });
+    }
+
+    function renderCharts() {
+      destroyCharts();
+
+      const monthly = groupMonthly();
+      monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+          labels: monthly.map(x => x.month),
+          datasets: [{ label: 'P&L', data: monthly.map(x => x.pnl), borderWidth: 1 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const status = groupStatus();
+      statusChart = new Chart(document.getElementById('statusChart'), {
+        type: 'pie',
+        data: {
+          labels: status.map(x => x.name),
+          datasets: [{ data: status.map(x => x.value) }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const equity = cumulativeSeries();
+      equityChart = new Chart(document.getElementById('equityChart'), {
+        type: 'line',
+        data: {
+          labels: equity.map(x => x.date),
+          datasets: [{ label: 'Cumulative P&L', data: equity.map(x => x.cumulative), tension: 0.25 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const ticker = groupTickerPnL();
+      tickerChart = new Chart(document.getElementById('tickerChart'), {
+        type: 'bar',
+        data: {
+          labels: ticker.map(x => x.name),
+          datasets: [{ label: 'Ticker P&L', data: ticker.map(x => x.value), borderWidth: 1 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function renderAll() {
+      saveTrades();
+      renderMetrics();
+      renderTable();
+      renderCharts();
+    }
+
+    function clearForm() {
+      document.getElementById('date').value = '';
+      document.getElementById('ticker').value = '';
+      document.getElementById('tradeType').value = 'Cash-Secured Put';
+      document.getElementById('strike').value = '';
+      document.getElementById('premium').value = '';
+      document.getElementById('capitalUsed').value = '';
+      document.getElementById('result').value = '';
+      document.getElementById('status').value = 'Open';
+      document.getElementById('sharesAssigned').value = '0';
+    }
+
+    function addTrade() {
+      const date = document.getElementById('date').value;
+      const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+      const tradeType = document.getElementById('tradeType').value;
+      const strike = Number(document.getElementById('strike').value);
+      const premium = Number(document.getElementById('premium').value);
+      const capitalUsed = Number(document.getElementById('capitalUsed').value);
+      const result = Number(document.getElementById('result').value);
+      const status = document.getElementById('status').value;
+      const sharesAssigned = Number(document.getElementById('sharesAssigned').value || 0);
+
+      if (!date || !ticker || Number.isNaN(strike) || Number.isNaN(premium) || Number.isNaN(capitalUsed) || Number.isNaN(result)) {
+        alert('Please fill all required fields.');
+        return;
+      }
+
+      trades.unshift({
+        id: Date.now(),
+        date,
+        ticker,
+        tradeType,
+        strike,
+        premium,
+        capitalUsed,
+        result,
+        status,
+        sharesAssigned
+      });
+
+      clearForm();
+      renderAll();
+    }
+
+    function deleteTrade(id) {
+      trades = trades.filter(t => t.id !== id);
+      renderAll();
+    }
+
+    window.deleteTrade = deleteTrade;
+
+    document.getElementById('addTradeBtn').addEventListener('click', addTrade);
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
